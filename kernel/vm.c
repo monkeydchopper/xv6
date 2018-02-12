@@ -139,9 +139,10 @@ setupkvm(void)
 
   if((pgdir = (pde_t*)kalloc()) == 0)
     return 0;
-  memset(pgdir, 0, PGSIZE);
+  memset(pgdir, 0, PGSIZE);   //set all the page to 0
   k = kmap;
-  for(k = kmap; k < &kmap[NELEM(kmap)]; k++)
+  for(k = kmap; k < &kmap[NELEM(kmap)]; k++)    
+			//#define NELEM(x) (sizeof(x)/sizeof((x)[0]))
     if(mappages(pgdir, k->p, k->e - k->p, (uint)k->p, k->perm) < 0)
       return 0;
 
@@ -231,7 +232,7 @@ allocuvm(pde_t *pgdir, uint oldsz, uint newsz)
   char *mem;
   uint a;
 
-  if(newsz > USERTOP)
+  if(newsz  > USERTOP)
     return 0;
   if(newsz < oldsz)
     return oldsz;
@@ -306,7 +307,7 @@ copyuvm(pde_t *pgdir, uint sz)
 
   if((d = setupkvm()) == 0)
     return 0;
-  for(i = 0; i < sz; i += PGSIZE){
+  for(i = PGSIZE; i < sz; i += PGSIZE){
     if((pte = walkpgdir(pgdir, (void*)i, 0)) == 0)
       panic("copyuvm: pte should exist");
     if(!(*pte & PTE_P))

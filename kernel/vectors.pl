@@ -1,5 +1,14 @@
 #!/usr/bin/perl -w
 
+
+#The x86 allows for 256
+#different interrupts. Interrupts 0-31 are 
+#defined for software exceptions, like divide errors
+#or attempts to access invalid memory addresses. 
+#Xv6 maps the 32 hardware interrupts
+#to the range 32-63 and uses interrupt 64 
+#as the system call interrupt.
+
 # Generate vectors.S, the trap/interrupt entry points.
 # There has to be one entry point per interrupt number
 # since otherwise there's no way for trap() to discover

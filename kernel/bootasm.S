@@ -5,6 +5,15 @@
 # memory at physical address 0x7c00 and starts executing in real mode
 # with %cs=0 %ip=7c00.
 
+
+# the first sector of the hard disk is the Boot Sector
+# load it into the physical address 0x7c00, that's what BIOS
+# do, now CPU is working in real mode, and ready to switch to 
+# 32 bit protected mode.
+
+
+
+
 #define SEG_KCODE 1  // kernel code
 #define SEG_KDATA 2  // kernel data+stack
 
@@ -15,6 +24,7 @@
 start:
   cli                         # BIOS enabled interrupts; disable
 
+	# 16 bit segment registers in real mode
   # Set up the important data segment registers (DS, ES, SS).
   xorw    %ax,%ax             # Segment number zero
   movw    %ax,%ds             # -> Data Segment
@@ -42,6 +52,8 @@ seta20.2:
   # Switch from real to protected mode.  Use a bootstrap GDT that makes
   # virtual addresses map dierctly to  physical addresses so that the
   # effective memory map doesn't change during the transition.
+	
+	# cr0 is a 32 bit control reg, which 0 bit is the PE, the following part can transit to protected mode
   lgdt    gdtdesc
   movl    %cr0, %eax
   orl     $CR0_PE, %eax

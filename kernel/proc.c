@@ -48,11 +48,12 @@ found:
   release(&ptable.lock);
 
   // Allocate kernel stack if possible.
-  if((p->kstack = kalloc()) == 0){
+	// in kalloc.c, allocate a 4096 page 
+  if((p->kstack = kalloc()) == 0){   
     p->state = UNUSED;
     return 0;
   }
-  sp = p->kstack + KSTACKSIZE;
+  sp = p->kstack + KSTACKSIZE;   //KSTACKSIZE = 4096
   
   // Leave room for trap frame.
   sp -= sizeof *p->tf;
