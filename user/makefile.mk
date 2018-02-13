@@ -17,7 +17,8 @@ USER_PROGS := \
 	usertests\
 	wc\
 	zombie\
-	sharedmem_simpletests
+	sharedmem_simpletests\
+	testpart2
 
 USER_PROGS := $(addprefix user/, $(USER_PROGS))
 
