@@ -61,7 +61,8 @@ enum procstate { UNUSED, EMBRYO, SLEEPING, RUNNABLE, RUNNING, ZOMBIE };
 
 // Per-process state
 struct proc {
-	int shmem[SHAREDMEMMAX];
+	int shmem[SHAREDMEMMAX];			//	determine if shared memory is used
+	int flag[SHAREDMEMMAX];				// determine if the proc been mapped
   uint sz;                     // Size of process memory (bytes)
   pde_t* pgdir;                // Page table
   char *kstack;                // Bottom of kernel stack for this process

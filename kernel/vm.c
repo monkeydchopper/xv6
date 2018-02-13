@@ -407,10 +407,15 @@ shmem_access(int page_number)
 		acquire(&shmems.lock);
 		if(proc->shmem[page_number])
 		{
-				if(mappages(proc->pgdir,va,PGSIZE,PADDR(shmems.addr[page_number]),PTE_W|PTE_U)<0)
+				if(proc->flag[page_number] == 0)
 				{
-					release(&shmems.lock);
-					return NULL;
+					if(mappages(proc->pgdir,va,PGSIZE,PADDR(shmems.addr[page_number]),PTE_W|PTE_U)<0)
+					{
+
+						release(&shmems.lock);
+						return NULL;
+					}
+					proc->flag[page_number] = 1;
 				}
 				
 				
@@ -426,6 +431,7 @@ shmem_access(int page_number)
 		}
 
 		mappages(proc->pgdir,va,PGSIZE,PADDR(shmems.addr[page_number]),PTE_W|PTE_U);
+		proc->flag[page_number] = 1;
 		shmems.count[page_number]++;
 		proc->shmem[page_number] = 1;
 		release(&shmems.lock);
@@ -462,6 +468,7 @@ shmem_free(struct proc* p)
 						}
 				}
 				p->shmem[i] = 0;
+				p->flag[i] = 0;
 		}
 		release(&shmems.lock);
 }
