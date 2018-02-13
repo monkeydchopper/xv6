@@ -169,6 +169,13 @@ void            switchuvm(struct proc*);
 void            switchkvm(void);
 int             copyout(pde_t*, uint, void*, uint);
 
+void            shinit(void);
+void            shmem_init(void);
+void*           shmem_access(int page_number);
+int             shmem_count(int page_number);
+void            shmem_free(struct proc *p);
+void            shmem_fork(struct proc *p);
+
 // number of elements in fixed-size array
 #define NELEM(x) (sizeof(x)/sizeof((x)[0]))
 

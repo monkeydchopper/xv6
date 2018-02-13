@@ -5,6 +5,14 @@
 #include "mmu.h"
 #include "proc.h"
 #include "elf.h"
+#include "spinlock.h"
+
+
+struct{
+		struct spinlock lock;
+		int count[SHAREDMEMMAX];  //how many procs sharing 
+		void* addr[SHAREDMEMMAX]; //address of each share memories
+}shmems;
 
 extern char data[];  // defined in data.S
 
@@ -232,7 +240,8 @@ allocuvm(pde_t *pgdir, uint oldsz, uint newsz)
   char *mem;
   uint a;
 
-  if(newsz  > USERTOP)
+  //if(newsz  > USERTOP)
+	if(newsz > USERTOP - PGSIZE*SHAREDMEMMAX)
     return 0;
   if(newsz < oldsz)
     return oldsz;
@@ -287,7 +296,7 @@ freevm(pde_t *pgdir)
 
   if(pgdir == 0)
     panic("freevm: no pgdir");
-  deallocuvm(pgdir, USERTOP, 0);
+  deallocuvm(pgdir, USERTOP - SHAREDMEMMAX*PGSIZE, 0);
   for(i = 0; i < NPDENTRIES; i++){
     if(pgdir[i] & PTE_P)
       kfree((char*)PTE_ADDR(pgdir[i]));
@@ -364,4 +373,109 @@ copyout(pde_t *pgdir, uint va, void *p, uint len)
     va = va0 + PGSIZE;
   }
   return 0;
+}
+
+
+// Initialize shared memory's locker
+void
+shinit(void)
+{
+		initlock(&shmems.lock,"shmems");
+}
+
+
+
+void 
+shmem_init(void)
+{
+		acquire(&shmems.lock);
+		int i;
+		for(i = 0;i < SHAREDMEMMAX; i++)
+		{
+				shmems.count[i] = 0;
+				shmems.addr[i] = NULL;
+		}
+		release(&shmems.lock);
+}
+
+
+void* 
+shmem_access(int page_number)
+{
+		if(page_number < 0 || page_number > SHAREDMEMMAX) return NULL;
+		void* va = (void*)(USERTOP - PGSIZE * (page_number + 1));
+		acquire(&shmems.lock);
+		if(proc->shmem[page_number])
+		{
+				if(mappages(proc->pgdir,va,PGSIZE,PADDR(shmems.addr[page_number]),PTE_W|PTE_U)<0)
+				{
+					release(&shmems.lock);
+					return NULL;
+				}
+				
+				
+				release(&shmems.lock);
+				return va;
+				
+		}
+		if((shmems.addr[page_number] = kalloc()) == 0)
+		{
+				proc->shmem[page_number] = 0;
+				release(&shmems.lock);
+				return NULL;
+		}
+
+		mappages(proc->pgdir,va,PGSIZE,PADDR(shmems.addr[page_number]),PTE_W|PTE_U);
+		shmems.count[page_number]++;
+		proc->shmem[page_number] = 1;
+		release(&shmems.lock);
+		return va;
+		
+}
+
+
+
+int
+shmem_count(int page_number)
+{
+		if(page_number < 0 || page_number >= SHAREDMEMMAX)
+				return -1;
+		return shmems.count[page_number];
+}
+
+
+
+void
+shmem_free(struct proc* p)
+{
+		acquire(&shmems.lock);
+		int i;
+		for(i = 0;i < SHAREDMEMMAX; i++)
+		{
+				if(p->shmem[i])
+				{
+						shmems.count[i]--;
+						if(shmems.count[i]==0&&shmems.addr[i])
+						{
+								kfree((char*)shmems.addr[i]);
+								shmems.addr[i] = NULL;
+						}
+				}
+				p->shmem[i] = 0;
+		}
+		release(&shmems.lock);
+}
+
+
+void
+shmem_fork(struct proc* p)
+{
+		acquire(&shmems.lock);
+		int i;
+		for(i = 0;i < SHAREDMEMMAX; i++)
+		{
+				if(p->shmem[i])
+						shmems.count[i]++;
+		}
+		release(&shmems.lock);
 }

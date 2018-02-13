@@ -11,6 +11,8 @@ struct {
   struct proc proc[NPROC];
 } ptable;
 
+
+
 static struct proc *initproc;
 
 int nextpid = 1;
@@ -68,7 +70,11 @@ found:
   p->context = (struct context*)sp;
   memset(p->context, 0, sizeof *p->context);
   p->context->eip = (uint)forkret;
-
+	int i;
+	for(i = 0;i < SHAREDMEMMAX; i++)
+	{
+			p->shmem[i] = 0;
+	}
   return p;
 }
 
@@ -157,6 +163,11 @@ fork(void)
   pid = np->pid;
   np->state = RUNNABLE;
   safestrcpy(np->name, proc->name, sizeof(proc->name));
+	for(i = 0;i < SHAREDMEMMAX; i++)
+	{
+			np->shmem[i] = proc->shmem[i];
+	}
+	shmem_fork(np);
   return pid;
 }
 
@@ -197,6 +208,7 @@ exit(void)
     }
   }
 
+	shmem_free(proc);
   // Jump into the scheduler, never to return.
   proc->state = ZOMBIE;
   sched();
