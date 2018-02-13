@@ -53,8 +53,8 @@ OBJDUMP := objdump
 ################################################################################
 
 # If the makefile can't find QEMU, specify its path here
-#QEMU :=  
-QEMU := qemu-system-x86_64
+QEMU :=  
+#QEMU := qemu-system-x86_64
 
 # Try to infer the correct QEMU if not specified
 ifndef QEMU
